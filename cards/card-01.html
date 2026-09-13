@@ -7,7 +7,16 @@
 <style>
   html,body{margin:0;min-height:100%;background:#f7f7f7}
   body{min-height:100vh;display:grid;place-items:center;overflow:auto}
-  #card-preview{position:relative;width:min(92vw,520px);aspect-ratio:2945/4962;overflow:visible}
+  /* Match the approved PC active-card size at the 1920×880 baseline.
+     Active card visual height ≈ 621px; preserve the exact 2945×4962 ratio. */
+  #card-preview{
+    position:relative;
+    height:min(70.56vh,621px);
+    aspect-ratio:2945/4962;
+    width:auto;
+    max-width:92vw;
+    overflow:visible;
+  }
   #status{font:14px/1.4 Arial,sans-serif;color:#555;position:fixed;left:16px;bottom:12px;background:#fff;padding:6px 9px;border:1px solid #ddd;border-radius:8px;z-index:99999}
 </style>
 </head>
@@ -36,7 +45,6 @@
     card.style.zIndex='1';
     document.getElementById('card-preview').appendChild(card);
 
-    // Re-apply the Bridge card's native scale into this standalone preview.
     const bridge=card.querySelector('.card1-bridge-source');
     if(bridge){
       const host=card.querySelector('.card1-bridge-host')||card;
@@ -47,7 +55,7 @@
       fit();
       addEventListener('resize',fit);
     }
-    status.textContent='Card 01 standalone preview';
+    status.textContent='Card 01 — PC active size';
     setTimeout(()=>status.remove(),1200);
   }catch(err){
     status.textContent='Could not load Card 01: '+err.message;
