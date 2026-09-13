@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Card 01 — Character Card</title>
+<style>
+  html,body{margin:0;min-height:100%;background:#f7f7f7}
+  body{min-height:100vh;display:grid;place-items:center;overflow:auto}
+  #card-preview{position:relative;width:min(92vw,520px);aspect-ratio:2945/4962;overflow:visible}
+  #status{font:14px/1.4 Arial,sans-serif;color:#555;position:fixed;left:16px;bottom:12px;background:#fff;padding:6px 9px;border:1px solid #ddd;border-radius:8px;z-index:99999}
+</style>
+</head>
+<body>
+<div id="card-preview"></div>
+<div id="status">Loading Card 01…</div>
+<script>
+(async()=>{
+  const status=document.getElementById('status');
+  try{
+    const html=await fetch('../index.html',{cache:'no-store'}).then(r=>r.text());
+    const doc=new DOMParser().parseFromString(html,'text/html');
+    doc.querySelectorAll('style,link[rel="stylesheet"]').forEach(node=>document.head.appendChild(node.cloneNode(true)));
+    const source=doc.querySelector('.about-card[data-card="1"]');
+    if(!source) throw new Error('Card 01 not found in index.html');
+    const card=source.cloneNode(true);
+    card.removeAttribute('data-depth');
+    card.classList.remove('is-dragging');
+    card.style.position='absolute';
+    card.style.inset='0';
+    card.style.width='100%';
+    card.style.height='100%';
+    card.style.transform='none';
+    card.style.opacity='1';
+    card.style.pointerEvents='auto';
+    card.style.zIndex='1';
+    document.getElementById('card-preview').appendChild(card);
+
+    // Re-apply the Bridge card's native scale into this standalone preview.
+    const bridge=card.querySelector('.card1-bridge-source');
+    if(bridge){
+      const host=card.querySelector('.card1-bridge-host')||card;
+      const fit=()=>{
+        const w=host.getBoundingClientRect().width;
+        bridge.style.transform=`scale(${w/2945})`;
+      };
+      fit();
+      addEventListener('resize',fit);
+    }
+    status.textContent='Card 01 standalone preview';
+    setTimeout(()=>status.remove(),1200);
+  }catch(err){
+    status.textContent='Could not load Card 01: '+err.message;
+    console.error(err);
+  }
+})();
+</script>
+</body>
+</html>
