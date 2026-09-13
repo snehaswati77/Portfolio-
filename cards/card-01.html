@@ -6,7 +6,7 @@
 <title>Card 01 — Character Card</title>
 <style>
   html,body{margin:0;min-height:100%;background:#f7f7f7}
-  body{min-height:100vh;display:grid;place-items:center;overflow:auto}
+  body{min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:auto}
   /* Match the approved PC active-card size at the 1920×880 baseline.
      Active card visual height ≈ 621px; preserve the exact 2945×4962 ratio. */
   #card-preview{
@@ -16,6 +16,8 @@
     width:auto;
     max-width:92vw;
     overflow:visible;
+    margin:auto;
+    flex:0 0 auto;
   }
   #status{font:14px/1.4 Arial,sans-serif;color:#555;position:fixed;left:16px;bottom:12px;background:#fff;padding:6px 9px;border:1px solid #ddd;border-radius:8px;z-index:99999}
 </style>
@@ -30,6 +32,17 @@
     const html=await fetch('../index.html',{cache:'no-store'}).then(r=>r.text());
     const doc=new DOMParser().parseFromString(html,'text/html');
     doc.querySelectorAll('style,link[rel="stylesheet"]').forEach(node=>document.head.appendChild(node.cloneNode(true)));
+
+    /* Reassert standalone-preview centering after the main page styles load. */
+    Object.assign(document.body.style,{
+      minHeight:'100vh',
+      margin:'0',
+      display:'flex',
+      alignItems:'center',
+      justifyContent:'center',
+      overflow:'auto'
+    });
+
     const source=doc.querySelector('.about-card[data-card="1"]');
     if(!source) throw new Error('Card 01 not found in index.html');
     const card=source.cloneNode(true);
@@ -55,7 +68,7 @@
       fit();
       addEventListener('resize',fit);
     }
-    status.textContent='Card 01 — PC active size';
+    status.textContent='Card 01 — centered PC active size';
     setTimeout(()=>status.remove(),1200);
   }catch(err){
     status.textContent='Could not load Card 01: '+err.message;
