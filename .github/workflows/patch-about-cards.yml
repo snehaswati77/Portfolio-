@@ -51,8 +51,8 @@ jobs:
           if 'id="about-png-card-styles"' not in html:
               html = html.replace('</head>', styles + '\n</head>', 1)
 
-          card1 = '<article aria-label="About card 1" class="about-card image-filled" data-card="1"><img src="cards/card-01.png" alt="Sneha Swati Character Card" draggable="false"></article>'
-          card2 = '<article aria-label="About card 2" class="about-card image-filled" data-card="2"><img src="cards/card-02.png" alt="Badges and Languages" draggable="false"></article>'
+          card1 = '<article aria-label="About card 1" class="about-card image-filled" data-card="1"><img src="cards/Card%201.png" alt="Sneha Swati Character Card" draggable="false"></article>'
+          card2 = '<article aria-label="About card 2" class="about-card image-filled" data-card="2"><img src="cards/Card%202.png" alt="Badges and Languages" draggable="false"></article>'
 
           html, n1 = re.subn(
               r'<article\s+aria-label="About card 1"[^>]*data-card="1"[^>]*>.*?</article>',
@@ -82,6 +82,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Use PNG artwork for About cards 1 and 2"
+            git commit -m "Fix About card PNG paths"
             git push
           fi
