@@ -9,11 +9,47 @@
   body{min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:auto}
   #card-preview{position:relative;height:min(70.56vh,621px);aspect-ratio:2945/4962;width:auto;max-width:92vw;overflow:visible;margin:auto;flex:0 0 auto}
   #status{font:14px/1.4 Arial,sans-serif;color:#555;position:fixed;left:16px;bottom:12px;background:#fff;padding:6px 9px;border:1px solid #ddd;border-radius:8px;z-index:99999}
+
+  #editor{
+    position:fixed;right:16px;top:16px;z-index:100000;width:250px;
+    background:rgba(255,255,255,.96);border:1px solid #111;border-radius:12px;
+    box-shadow:0 8px 24px rgba(0,0,0,.14);padding:12px;font:12px/1.35 Arial,sans-serif;
+  }
+  #editor h3{font-size:13px;margin:0 0 8px}
+  #editor .hint{color:#666;margin-bottom:8px}
+  #selected-name{background:#f2f2f2;border-radius:7px;padding:7px;margin-bottom:9px;min-height:16px;word-break:break-word}
+  #editor label{display:grid;grid-template-columns:82px 1fr 42px;align-items:center;gap:7px;margin:7px 0}
+  #editor input[type=range]{width:100%}
+  #editor output{text-align:right;font-variant-numeric:tabular-nums}
+  #editor .buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}
+  #editor button{border:1px solid #111;background:#fff;border-radius:7px;padding:7px 8px;cursor:pointer;font:inherit}
+  #editor button:hover{background:#f2f2f2}
+  #editor-toggle{width:100%;margin-bottom:8px;font-weight:700}
+  #editor-toggle.on{background:#111;color:#fff}
+  .editor-selected{outline:6px solid #F5A833 !important;outline-offset:8px !important}
+  body:not(.edit-mode) #editor-controls{opacity:.45;pointer-events:none}
 </style>
 </head>
 <body>
 <div id="card-preview"></div>
 <div id="status">Loading Card 01…</div>
+<div id="editor">
+  <h3>Card 01 manual editor</h3>
+  <button id="editor-toggle">Edit mode: OFF</button>
+  <div class="hint">Turn edit mode on, then click any text on the card.</div>
+  <div id="selected-name">Nothing selected</div>
+  <div id="editor-controls">
+    <label>Font size <input id="font-scale" type="range" min="50" max="200" step="1" value="100"><output id="font-out">100%</output></label>
+    <label>Move X <input id="move-x" type="range" min="-250" max="250" step="1" value="0"><output id="x-out">0</output></label>
+    <label>Move Y <input id="move-y" type="range" min="-250" max="250" step="1" value="0"><output id="y-out">0</output></label>
+    <div class="buttons">
+      <button id="reset-selected">Reset selected</button>
+      <button id="reset-all">Reset all</button>
+      <button id="copy-settings">Copy settings</button>
+      <button id="hide-editor">Hide panel</button>
+    </div>
+  </div>
+</div>
 <script>
 (async()=>{
   const status=document.getElementById('status');
@@ -31,27 +67,109 @@
     Object.assign(card.style,{position:'absolute',inset:'0',width:'100%',height:'100%',transform:'none',opacity:'1',pointerEvents:'auto',zIndex:'1'});
     document.getElementById('card-preview').appendChild(card);
 
-    /* Additional +5% on the two previously adjusted text groups. */
+    /* Current approved manual tweaks remain the starting point. */
     const shaping = card.querySelector('.shaping-how-samsung-users-experience-intelligence span');
-    if(shaping) shaping.style.fontSize='93.7125px'; /* 89.25px × 1.05 */
+    if(shaping) shaping.style.fontSize='93.7125px';
 
     const coreSkillsFrame = card.querySelector('.core-skills')?.parentElement?.parentElement;
     if(coreSkillsFrame){
       coreSkillsFrame.querySelectorAll('.text span').forEach(el=>{
         if(el.textContent.trim()==='Core Skills') return;
         const fs=parseFloat(getComputedStyle(el).fontSize);
-        if(fs) el.style.fontSize=(fs*1.071)+'px'; /* previous +2%, then +5% more */
+        if(fs) el.style.fontSize=(fs*1.071)+'px';
       });
     }
 
     const bridge=card.querySelector('.card1-bridge-source');
     if(bridge){
       const host=card.querySelector('.card1-bridge-host')||card;
+      host.style.pointerEvents='auto';
       const fit=()=>{const w=host.getBoundingClientRect().width;bridge.style.transform=`scale(${w/2945})`};
       fit(); addEventListener('resize',fit);
     }
-    status.textContent='Card 01 — +5% more text scaling';
-    setTimeout(()=>status.remove(),1200);
+
+    /* ---------- Manual editor ---------- */
+    const editable=[...card.querySelectorAll('span,p,h1,h2,h3,h4,h5,h6')].filter(el=>el.textContent.trim());
+    editable.forEach((el,i)=>{
+      el.dataset.editorId='t'+i;
+      el.dataset.baseFont=parseFloat(getComputedStyle(el).fontSize)||0;
+      el.dataset.baseTransform=el.style.transform||'';
+    });
+
+    const storageKey='sneha-card01-manual-edits-v1';
+    let edits={};
+    try{ edits=JSON.parse(localStorage.getItem(storageKey)||'{}')||{}; }catch(e){ edits={}; }
+    const applyEdit=(el,data)=>{
+      const base=parseFloat(el.dataset.baseFont)||parseFloat(getComputedStyle(el).fontSize)||0;
+      if(base) el.style.fontSize=(base*(data.font||100)/100)+'px';
+      const x=data.x||0, y=data.y||0;
+      const baseTransform=el.dataset.baseTransform||'';
+      el.style.transform=`${baseTransform} translate(${x}px, ${y}px)`;
+      el.style.transformOrigin='left center';
+    };
+    editable.forEach(el=>{const d=edits[el.dataset.editorId];if(d)applyEdit(el,d)});
+
+    const toggle=document.getElementById('editor-toggle');
+    const selectedName=document.getElementById('selected-name');
+    const font=document.getElementById('font-scale'), mx=document.getElementById('move-x'), my=document.getElementById('move-y');
+    const fo=document.getElementById('font-out'), xo=document.getElementById('x-out'), yo=document.getElementById('y-out');
+    let selected=null;
+
+    toggle.onclick=()=>{
+      const on=document.body.classList.toggle('edit-mode');
+      toggle.textContent='Edit mode: '+(on?'ON':'OFF');
+      toggle.classList.toggle('on',on);
+      if(!on && selected){selected.classList.remove('editor-selected');selected=null;selectedName.textContent='Nothing selected'}
+    };
+
+    const selectEl=(el)=>{
+      if(selected)selected.classList.remove('editor-selected');
+      selected=el; selected.classList.add('editor-selected');
+      const id=el.dataset.editorId, d=edits[id]||{font:100,x:0,y:0};
+      font.value=d.font||100; mx.value=d.x||0; my.value=d.y||0;
+      fo.value=(d.font||100)+'%'; xo.value=d.x||0; yo.value=d.y||0;
+      selectedName.textContent=el.textContent.trim().slice(0,90);
+    };
+
+    card.addEventListener('click',e=>{
+      if(!document.body.classList.contains('edit-mode')) return;
+      e.preventDefault();e.stopPropagation();
+      const el=e.target.closest('[data-editor-id]');
+      if(el && card.contains(el)) selectEl(el);
+    },true);
+
+    const update=()=>{
+      if(!selected)return;
+      const id=selected.dataset.editorId;
+      edits[id]={font:+font.value,x:+mx.value,y:+my.value};
+      applyEdit(selected,edits[id]);
+      fo.value=font.value+'%';xo.value=mx.value;yo.value=my.value;
+      localStorage.setItem(storageKey,JSON.stringify(edits));
+    };
+    [font,mx,my].forEach(input=>input.addEventListener('input',update));
+
+    document.getElementById('reset-selected').onclick=()=>{
+      if(!selected)return;
+      delete edits[selected.dataset.editorId];
+      applyEdit(selected,{font:100,x:0,y:0});
+      font.value=100;mx.value=0;my.value=0;fo.value='100%';xo.value='0';yo.value='0';
+      localStorage.setItem(storageKey,JSON.stringify(edits));
+    };
+    document.getElementById('reset-all').onclick=()=>{
+      edits={};localStorage.removeItem(storageKey);
+      editable.forEach(el=>applyEdit(el,{font:100,x:0,y:0}));
+      if(selected)selectEl(selected);
+    };
+    document.getElementById('copy-settings').onclick=async()=>{
+      const payload=JSON.stringify(edits,null,2);
+      try{await navigator.clipboard.writeText(payload);status.textContent='Editor settings copied — paste them into ChatGPT.'}
+      catch(e){prompt('Copy these settings:',payload)}
+      status.style.display='block';setTimeout(()=>status.style.display='none',2600);
+    };
+    document.getElementById('hide-editor').onclick=()=>document.getElementById('editor').style.display='none';
+
+    status.textContent='Card 01 — manual editor ready';
+    setTimeout(()=>status.style.display='none',1400);
   }catch(err){status.textContent='Could not load Card 01: '+err.message;console.error(err)}
 })();
 </script>
