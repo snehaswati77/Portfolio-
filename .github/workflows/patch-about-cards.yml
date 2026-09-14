@@ -1,0 +1,87 @@
+name: Patch About cards 1 and 2
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-about-cards.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replace About cards 1 and 2 with uploaded PNGs
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path('index.html')
+          html = path.read_text(encoding='utf-8')
+
+          styles = r'''
+          <style id="about-png-card-styles">
+          .about-card.image-filled{
+            background:transparent !important;
+            border:0 !important;
+            box-shadow:none !important;
+            overflow:visible !important;
+          }
+          .about-card.image-filled::after{display:none !important;}
+          .about-card.image-filled > img{
+            display:block;
+            width:100%;
+            height:100%;
+            object-fit:contain;
+            object-position:center;
+            pointer-events:none;
+            user-select:none;
+            -webkit-user-select:none;
+          }
+          </style>
+          '''
+
+          if 'id="about-png-card-styles"' not in html:
+              html = html.replace('</head>', styles + '\n</head>', 1)
+
+          card1 = '<article aria-label="About card 1" class="about-card image-filled" data-card="1"><img src="cards/card-01.png" alt="Sneha Swati Character Card" draggable="false"></article>'
+          card2 = '<article aria-label="About card 2" class="about-card image-filled" data-card="2"><img src="cards/card-02.png" alt="Badges and Languages" draggable="false"></article>'
+
+          html, n1 = re.subn(
+              r'<article\s+aria-label="About card 1"[^>]*data-card="1"[^>]*>.*?</article>',
+              card1,
+              html,
+              count=1,
+              flags=re.S,
+          )
+          html, n2 = re.subn(
+              r'<article\s+aria-label="About card 2"[^>]*data-card="2"[^>]*>.*?</article>',
+              card2,
+              html,
+              count=1,
+              flags=re.S,
+          )
+
+          if n1 != 1 or n2 != 1:
+              raise SystemExit(f'Expected one Card 1 and one Card 2 match; got card1={n1}, card2={n2}')
+
+          path.write_text(html, encoding='utf-8')
+
+      - name: Commit patched About cards
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes needed."
+          else
+            git commit -m "Use PNG artwork for About cards 1 and 2"
+            git push
+          fi
