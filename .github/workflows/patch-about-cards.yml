@@ -42,7 +42,7 @@ jobs:
             inset:0;
             border-radius:inherit;
             background:#F5A833;
-            transform:translate(10px,12px);
+            transform:translate(5px,6px);
             opacity:0;
             pointer-events:none;
             z-index:0;
@@ -83,6 +83,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Refine active About card orange shadow"
+            git commit -m "Thin active About card orange shadow"
             git push
           fi
