@@ -981,6 +981,25 @@ html, body{
 }
 </style>
 
+
+<style id="card-no-selection">
+html, body, body *{
+  user-select:none !important;
+  -webkit-user-select:none !important;
+  -ms-user-select:none !important;
+  -webkit-touch-callout:none !important;
+}
+img, svg{
+  -webkit-user-drag:none !important;
+  user-drag:none !important;
+}
+/* Keep interaction available for the clickable areas we add later. */
+a, button, [role="button"], [data-clickable], [data-no-card-swipe]{
+  pointer-events:auto !important;
+  cursor:pointer;
+}
+</style>
+
 </head>
 
   <body>
@@ -2378,6 +2397,15 @@ html, body{
 
   fit();
   window.addEventListener('resize', fit, {passive:true});
+})();
+</script>
+
+
+<script id="card-no-selection-script">
+(() => {
+  document.addEventListener('selectstart', e => e.preventDefault());
+  document.addEventListener('dragstart', e => e.preventDefault());
+  document.querySelectorAll('img').forEach(img => img.setAttribute('draggable','false'));
 })();
 </script>
 
