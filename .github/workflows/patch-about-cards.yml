@@ -1,4 +1,4 @@
-name: Fix About active card shadow
+name: Refine About active card shadow
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Add hard orange shadow layer to active filled card
+      - name: Refine hard orange shadow on active filled card
         shell: python
         run: |
           from pathlib import Path
@@ -42,7 +42,7 @@ jobs:
             inset:0;
             border-radius:inherit;
             background:#F5A833;
-            transform:translate(18px,20px);
+            transform:translate(10px,12px);
             opacity:0;
             pointer-events:none;
             z-index:0;
@@ -75,7 +75,7 @@ jobs:
 
           path.write_text(html, encoding='utf-8')
 
-      - name: Commit hard shadow fix
+      - name: Commit refined hard shadow
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -83,6 +83,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Add hard orange shadow to active About card"
+            git commit -m "Refine active About card orange shadow"
             git push
           fi
