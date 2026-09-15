@@ -1,4 +1,4 @@
-name: Remove duplicate Card 1 shadow
+name: Restore About card layering
 
 on:
   push:
@@ -17,15 +17,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Keep only the carousel active shadow
+      - name: Restore correct active card layering
         shell: python
         run: |
           from pathlib import Path
           import re
 
-          # Main carousel: one thin hard orange shadow only.
-          index_path = Path('index.html')
-          html = index_path.read_text(encoding='utf-8')
+          path = Path('index.html')
+          html = path.read_text(encoding='utf-8')
 
           css = r'''
           <style id="about-active-hard-shadow">
@@ -60,46 +59,36 @@ jobs:
           .about-card.image-filled > img{
             z-index:2 !important;
           }
+
+          .about-card.html-filled > iframe{
+            position:absolute !important;
+            user-select:none !important;
+            -webkit-user-select:none !important;
+          }
+
+          .about-card.image-filled > img{
+            position:relative !important;
+            user-select:none !important;
+            -webkit-user-select:none !important;
+          }
           </style>
           '''
 
           if 'id="about-active-hard-shadow"' in html:
-            html = re.sub(r'<style id="about-active-hard-shadow">.*?</style>', css.strip(), html, count=1, flags=re.S)
+              html = re.sub(r'<style id="about-active-hard-shadow">.*?</style>', css.strip(), html, count=1, flags=re.S)
           else:
-            html = html.replace('</head>', css + '\n</head>', 1)
+              html = html.replace('</head>', css + '\n</head>', 1)
 
-          # Neutralize any older active filled-card box shadow rule.
-          html = re.sub(
-            r'(\.about-card\[data-depth="0"\]\.html-filled,\s*\.about-card\[data-depth="0"\]\.image-filled\s*\{[^}]*?)box-shadow:[^;]+;',
-            r'\1box-shadow:none !important;',
-            html,
-            flags=re.S,
-          )
-          index_path.write_text(html, encoding='utf-8')
+          path.write_text(html, encoding='utf-8')
 
-          # Card 1 HTML has its own Figma-exported orange shadow. Remove that so
-          # the carousel layer above is the only orange shadow you see.
-          card_path = Path('cards/card-01.html')
-          card = card_path.read_text(encoding='utf-8')
-
-          patterns = [
-            r'box-shadow:\s*100px\s+100px\s+4px\s+0\s+rgb\(245\s*,\s*168\s*,\s*51\s*\)\s*;',
-            r'box-shadow:\s*100px\s+100px\s+4px\s+0\s+#F5A833\s*;',
-            r'box-shadow:\s*100px\s+100px\s+4px\s+0\s+#f5a833\s*;',
-          ]
-          for pattern in patterns:
-            card = re.sub(pattern, 'box-shadow:none;', card, flags=re.I)
-
-          card_path.write_text(card, encoding='utf-8')
-
-      - name: Commit shadow cleanup
+      - name: Commit layering fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html cards/card-01.html
+          git add index.html
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Remove built-in Card 1 orange shadow"
+            git commit -m "Restore active About card layering"
             git push
           fi
