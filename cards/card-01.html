@@ -946,11 +946,42 @@ body {
         width: 3036px;
         min-height: 5040px;
         transform-origin: center center;
-         zoom: 1;
+         zoom: 1 !important;
          flex: 0 0 auto;
       }
     </style>
-  </head>
+  
+<style id="embedded-card-fit-css">
+  html, body {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    display: block !important;
+  }
+  .viewport {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    transform: none !important;
+    zoom: 1 !important;
+  }
+  .content-layer {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    width: 3036px !important;
+    height: 5040px !important;
+    transform-origin: center center !important;
+  }
+</style>
+
+</head>
 
   <body>
     <div class="viewport">
@@ -2326,18 +2357,23 @@ body {
         window.addEventListener('resize', fit);
       });
     </script>
-  
+
 <script id="embedded-card-fit">
 (() => {
   const BASE_W = 3036;
-  const viewport = document.querySelector('.viewport');
-  if (!viewport) return;
+  const BASE_H = 5040;
+  const layer = document.querySelector('.content-layer');
+  if (!layer) return;
+
   const fit = () => {
-    const w = document.documentElement.clientWidth || window.innerWidth || BASE_W;
-    viewport.style.zoom = String(w / BASE_W);
+    const w = window.innerWidth || document.documentElement.clientWidth || BASE_W;
+    const h = window.innerHeight || document.documentElement.clientHeight || BASE_H;
+    const scale = Math.min(w / BASE_W, h / BASE_H);
+    layer.style.transform = `translate(-50%, -50%) scale(${scale})`;
   };
+
   fit();
-  window.addEventListener('resize', fit, {passive:true});
+  window.addEventListener('resize', fit, { passive: true });
 })();
 </script>
 
