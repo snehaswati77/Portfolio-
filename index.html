@@ -1762,12 +1762,37 @@ html,
 }
 </style>
 
+
+<style id="card1-replacement-fit-final">
+/* Final authority for the fresh Card 1 export. Old 108% safe-canvas
+   rules stay harmless underneath this override. */
+.about-card.html-filled > iframe{
+  position:absolute !important;
+  inset:0 !important;
+  left:0 !important;
+  top:0 !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:none !important;
+  max-height:none !important;
+  border:0 !important;
+  background:transparent !important;
+  overflow:hidden !important;
+  pointer-events:none !important;
+}
+
+/* Match Card 1's active hard shadow to the same shell geometry as PNG cards. */
+.about-card.html-filled::before{
+  inset:0 !important;
+}
+</style>
+
 </head>
 <body>
 <main class="about-card-module">
 <section aria-label="About card stack" class="about-card-stage" id="aboutCardStage" tabindex="0">
 <div class="about-card-stack" id="aboutCardStack">
-<article aria-label="About card 1" class="about-card html-filled" data-card="1"><iframe src="cards/card-01.html?v=fe4664eade33" title="Sneha Swati Character Card" scrolling="no" loading="eager"></iframe></article>
+<article aria-label="About card 1" class="about-card html-filled" data-card="1"><iframe src="cards/card-01.html?v=20260915-1452" title="Sneha Swati Character Card" scrolling="no" loading="eager"></iframe></article>
 <article aria-label="About card 2" class="about-card image-filled" data-card="2"><img src="cards/Card%202.png" alt="Badges and Languages" draggable="false"></article>
 <article aria-label="About card 3" class="about-card" data-card="3"></article>
 <article aria-label="About card 4" class="about-card" data-card="4"></article>
