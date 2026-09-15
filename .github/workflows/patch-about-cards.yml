@@ -23,133 +23,126 @@ jobs:
           from pathlib import Path
           import re
 
-          # --- Card 1: preserve its current visible size, but give it a larger
-          # internal canvas so the outline / orange edge cannot be clipped. ---
+          # ---------- MAIN CAROUSEL ----------
+          index_path = Path('index.html')
+          html = index_path.read_text(encoding='utf-8')
+
+          fixes = r'''
+          <style id="about-card-visual-fixes">
+          /* Give the HTML card a larger transparent viewport without changing
+             the visible artwork scale. This prevents its outline/shadow from clipping. */
+          .about-card.html-filled{
+            overflow:visible !important;
+          }
+          .about-card.html-filled > iframe{
+            position:absolute !important;
+            left:-4% !important;
+            top:-4% !important;
+            width:108% !important;
+            height:108% !important;
+            max-width:none !important;
+            max-height:none !important;
+            border:0 !important;
+            background:transparent !important;
+            overflow:hidden !important;
+            pointer-events:auto;
+          }
+
+          /* Orange offset shadow belongs only to the currently active filled card. */
+          .about-card[data-depth="0"].html-filled,
+          .about-card[data-depth="0"].image-filled{
+            box-shadow:18px 20px 0 #F5A833 !important;
+            border-radius:var(--radius) !important;
+          }
+          .about-card[data-depth="1"].html-filled,
+          .about-card[data-depth="2"].html-filled,
+          .about-card[data-depth="3"].html-filled,
+          .about-card[data-depth="4"].html-filled,
+          .about-card[data-depth="1"].image-filled,
+          .about-card[data-depth="2"].image-filled,
+          .about-card[data-depth="3"].image-filled,
+          .about-card[data-depth="4"].image-filled{
+            box-shadow:none !important;
+          }
+          </style>
+          '''
+
+          if 'id="about-card-visual-fixes"' in html:
+              html = re.sub(r'<style id="about-card-visual-fixes">.*?</style>', fixes.strip(), html, count=1, flags=re.S)
+          else:
+              html = html.replace('</head>', fixes + '\n</head>', 1)
+          index_path.write_text(html, encoding='utf-8')
+
+          # ---------- CARD 1 HTML ----------
           card_path = Path('cards/card-01.html')
           card = card_path.read_text(encoding='utf-8')
 
-          card = re.sub(
-              r'\s*<script id="embedded-card-fit">.*?</script>\s*',
-              '\n',
-              card,
-              count=1,
-              flags=re.S,
-          )
-
+          # Remove previous fit CSS/script so there is one authoritative embed fit.
+          card = re.sub(r'\s*<style id="embedded-card-fit-css">.*?</style>\s*', '\n', card, count=1, flags=re.S)
+          card = re.sub(r'\s*<script id="embedded-card-fit">.*?</script>\s*', '\n', card, count=1, flags=re.S)
           card = re.sub(r'zoom:\s*[^;]+;', 'zoom: 1 !important;', card)
 
           fit_css = r'''
           <style id="embedded-card-fit-css">
-            html, body {
-              width: 100% !important;
-              height: 100% !important;
-              min-height: 0 !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              overflow: visible !important;
-              background: transparent !important;
-              display: block !important;
-            }
-            .viewport {
-              position: relative !important;
-              width: 100% !important;
-              height: 100% !important;
-              min-height: 0 !important;
-              overflow: visible !important;
-              transform: none !important;
-              zoom: 1 !important;
-            }
-            .content-layer {
-              position: absolute !important;
-              left: 50% !important;
-              top: 50% !important;
-              width: 3036px !important;
-              height: 5040px !important;
-              transform-origin: center center !important;
-              overflow: visible !important;
-            }
+          html, body{
+            width:100% !important;
+            height:100% !important;
+            min-height:0 !important;
+            margin:0 !important;
+            padding:0 !important;
+            overflow:hidden !important;
+            background:transparent !important;
+            display:block !important;
+          }
+          .viewport{
+            position:relative !important;
+            width:100% !important;
+            height:100% !important;
+            min-height:0 !important;
+            overflow:visible !important;
+            transform:none !important;
+            zoom:1 !important;
+          }
+          .content-layer{
+            position:absolute !important;
+            left:50% !important;
+            top:50% !important;
+            width:3036px !important;
+            height:5040px !important;
+            transform-origin:center center !important;
+          }
           </style>
           '''
-
-          if 'id="embedded-card-fit-css"' in card:
-              card = re.sub(
-                  r'<style id="embedded-card-fit-css">.*?</style>',
-                  fit_css.strip(),
-                  card,
-                  count=1,
-                  flags=re.S,
-              )
-          else:
-              card = card.replace('</head>', fit_css + '\n</head>', 1)
+          card = card.replace('</head>', fit_css + '\n</head>', 1)
 
           fit_script = r'''
           <script id="embedded-card-fit">
           (() => {
-            const ART_W = 3036;
-            const ART_H = 5040;
-            const SAFE_W = 3279;
-            const SAFE_H = 5342;
+            const BASE_W = 3036;
+            const BASE_H = 5040;
+            const SAFE_FACTOR = 1.08; // matches the iframe's 108% safe canvas
             const layer = document.querySelector('.content-layer');
             if (!layer) return;
 
             const fit = () => {
-              const w = window.innerWidth || document.documentElement.clientWidth || SAFE_W;
-              const h = window.innerHeight || document.documentElement.clientHeight || SAFE_H;
-              const scale = Math.min(w / SAFE_W, h / SAFE_H);
+              const w = window.innerWidth || document.documentElement.clientWidth || BASE_W;
+              const h = window.innerHeight || document.documentElement.clientHeight || BASE_H;
+              const scale = Math.min(
+                w / (BASE_W * SAFE_FACTOR),
+                h / (BASE_H * SAFE_FACTOR)
+              );
               layer.style.transform = `translate(-50%, -50%) scale(${scale})`;
             };
 
             fit();
-            window.addEventListener('resize', fit, { passive: true });
+            window.addEventListener('resize', fit, {passive:true});
           })();
           </script>
           '''
           card = card.replace('</body>', fit_script + '\n</body>', 1)
           card_path.write_text(card, encoding='utf-8')
 
-          # --- About carousel: enlarge only the iframe canvas, not the artwork,
-          # and restore the orange active-card offset shadow. ---
-          index_path = Path('index.html')
-          html = index_path.read_text(encoding='utf-8')
-
-          override = r'''
-          <style id="about-card-safe-bounds-shadow">
-            .about-card.html-filled{
-              overflow: visible !important;
-            }
-            .about-card.html-filled > iframe{
-              position: absolute !important;
-              width: 108% !important;
-              height: 106% !important;
-              left: -4% !important;
-              top: -3% !important;
-              border: 0 !important;
-              background: transparent !important;
-              overflow: visible !important;
-            }
-
-            /* Active card gets the approved orange offset shadow. */
-            .about-card.html-filled[data-depth="0"],
-            .about-card.image-filled[data-depth="0"]{
-              box-shadow: 12px 14px 0 #F5A833 !important;
-            }
-          </style>
-          '''
-
-          if 'id="about-card-safe-bounds-shadow"' in html:
-              html = re.sub(
-                  r'<style id="about-card-safe-bounds-shadow">.*?</style>',
-                  override.strip(),
-                  html,
-                  count=1,
-                  flags=re.S,
-              )
-          else:
-              html = html.replace('</head>', override + '\n</head>', 1)
-
-          index_path.write_text(html, encoding='utf-8')
-
-      - name: Commit clipping and shadow fix
+      - name: Commit visual fixes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
