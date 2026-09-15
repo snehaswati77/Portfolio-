@@ -1,4 +1,4 @@
-name: Normalize replacement Card 1 canvas
+name: Map replacement Card 1 exactly to shell
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Normalize Card 1 safe canvas and transparency
+      - name: Remove export safe canvas and fit true card body
         shell: python
         run: |
           from pathlib import Path
@@ -26,9 +26,9 @@ jobs:
           card_path = Path('cards/card-01.html')
           card = card_path.read_text(encoding='utf-8')
 
-          # Keep the fresh export intact, but normalize its outer canvas for iframe use.
-          # The export canvas is 3023x5040 while the actual card body is 2945x4962,
-          # which leaves 39px of safe room on each side when centered.
+          # The actual exported card is exactly 2945 x 4962 and already starts at 0,0.
+          # Remove the larger 3023 x 5040 preview canvas entirely so the iframe maps
+          # one-to-one to the carousel shell and cannot show rectangular gutters.
           css = r'''
           <style id="card1-embed-normalize">
           html, body{
@@ -43,17 +43,17 @@ jobs:
           }
           .viewport{
             position:relative !important;
-            width:3023px !important;
-            height:5040px !important;
-            min-height:5040px !important;
+            width:2945px !important;
+            height:4962px !important;
+            min-height:4962px !important;
             transform-origin:0 0 !important;
             flex:0 0 auto !important;
             background:transparent !important;
           }
           .content-layer{
-            position:absolute !important;
-            left:39px !important;
-            top:39px !important;
+            position:relative !important;
+            left:0 !important;
+            top:0 !important;
             width:2945px !important;
             height:4962px !important;
             background:transparent !important;
@@ -66,20 +66,24 @@ jobs:
           else:
               card = card.replace('</head>', css + '\n</head>', 1)
 
+          # Make the export's own fit script use the true card width, not the old
+          # preview-canvas width. This changes only internal fit, not carousel geometry.
+          card = re.sub(r'var\s+baseWidth\s*=\s*3023\s*;', 'var baseWidth = 2945;', card, count=1)
+
           card_path.write_text(card, encoding='utf-8')
 
-          # Keep carousel geometry untouched. Only force a fresh iframe load.
+          # Keep the carousel/card transforms untouched; only force a fresh Card 1 load.
           index_path = Path('index.html')
           html = index_path.read_text(encoding='utf-8')
           html = re.sub(
               r'src="cards/card-01\.html(?:\?[^\"]*)?"',
-              'src="cards/card-01.html?v=20260915-1458"',
+              'src="cards/card-01.html?v=20260915-1501"',
               html,
               count=1,
           )
           index_path.write_text(html, encoding='utf-8')
 
-      - name: Commit Card 1 canvas normalization
+      - name: Commit exact Card 1 mapping
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -87,6 +91,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Normalize replacement Card 1 canvas"
+            git commit -m "Map replacement Card 1 exactly to shell"
             git push
           fi
