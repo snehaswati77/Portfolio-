@@ -1,4 +1,4 @@
-name: Patch About cards 1 and 2
+name: Patch About card 1 HTML
 
 on:
   push:
@@ -17,43 +17,39 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Replace About cards 1 and 2 with uploaded PNGs
+      - name: Wire Card 1 HTML into About carousel
         shell: python
         run: |
           from pathlib import Path
           import re
 
-          path = Path('index.html')
-          html = path.read_text(encoding='utf-8')
+          index_path = Path('index.html')
+          html = index_path.read_text(encoding='utf-8')
 
           styles = r'''
-          <style id="about-png-card-styles">
-          .about-card.image-filled{
+          <style id="about-html-card-styles">
+          .about-card.html-filled{
             background:transparent !important;
             border:0 !important;
             box-shadow:none !important;
             overflow:visible !important;
           }
-          .about-card.image-filled::after{display:none !important;}
-          .about-card.image-filled > img{
+          .about-card.html-filled::after{display:none !important;}
+          .about-card.html-filled > iframe{
             display:block;
             width:100%;
             height:100%;
-            object-fit:contain;
-            object-position:center;
-            pointer-events:none;
-            user-select:none;
-            -webkit-user-select:none;
+            border:0;
+            background:transparent;
+            overflow:hidden;
           }
           </style>
           '''
 
-          if 'id="about-png-card-styles"' not in html:
+          if 'id="about-html-card-styles"' not in html:
               html = html.replace('</head>', styles + '\n</head>', 1)
 
-          card1 = '<article aria-label="About card 1" class="about-card image-filled" data-card="1"><img src="cards/Card%201.png" alt="Sneha Swati Character Card" draggable="false"></article>'
-          card2 = '<article aria-label="About card 2" class="about-card image-filled" data-card="2"><img src="cards/Card%202.png" alt="Badges and Languages" draggable="false"></article>'
-
+          card1 = '<article aria-label="About card 1" class="about-card html-filled" data-card="1"><iframe src="cards/card-01.html" title="Sneha Swati Character Card" scrolling="no" loading="eager"></iframe></article>'
           html, n1 = re.subn(
               r'<article\s+aria-label="About card 1"[^>]*data-card="1"[^>]*>.*?</article>',
               card1,
@@ -61,27 +57,40 @@ jobs:
               count=1,
               flags=re.S,
           )
-          html, n2 = re.subn(
-              r'<article\s+aria-label="About card 2"[^>]*data-card="2"[^>]*>.*?</article>',
-              card2,
-              html,
-              count=1,
-              flags=re.S,
-          )
+          if n1 != 1:
+              raise SystemExit(f'Expected one Card 1 match; got {n1}')
+          index_path.write_text(html, encoding='utf-8')
 
-          if n1 != 1 or n2 != 1:
-              raise SystemExit(f'Expected one Card 1 and one Card 2 match; got card1={n1}, card2={n2}')
+          card_path = Path('cards/card-01.html')
+          card = card_path.read_text(encoding='utf-8')
+          card = re.sub(r'zoom:\s*0\.3\s*;', 'zoom: 1;', card, count=1)
+          fit_script = r'''
+          <script id="embedded-card-fit">
+          (() => {
+            const BASE_W = 3036;
+            const viewport = document.querySelector('.viewport');
+            if (!viewport) return;
+            const fit = () => {
+              const w = document.documentElement.clientWidth || window.innerWidth || BASE_W;
+              viewport.style.zoom = String(w / BASE_W);
+            };
+            fit();
+            window.addEventListener('resize', fit, {passive:true});
+          })();
+          </script>
+          '''
+          if 'id="embedded-card-fit"' not in card:
+              card = card.replace('</body>', fit_script + '\n</body>', 1)
+          card_path.write_text(card, encoding='utf-8')
 
-          path.write_text(html, encoding='utf-8')
-
-      - name: Commit patched About cards
+      - name: Commit patched About card
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
+          git add index.html cards/card-01.html
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Fix About card PNG paths"
+            git commit -m "Use Card 1 HTML in About carousel"
             git push
           fi
