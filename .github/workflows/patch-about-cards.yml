@@ -1,4 +1,4 @@
-name: Disable About card text selection
+name: Restore Card 1 drag
 
 on:
   push:
@@ -17,65 +17,53 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Disable selection inside Card 1 without blocking clicks
+      - name: Let carousel own drag gestures over Card 1
         shell: python
         run: |
           from pathlib import Path
           import re
 
-          path = Path('cards/card-01.html')
+          path = Path('index.html')
           html = path.read_text(encoding='utf-8')
 
           css = r'''
-          <style id="card-no-selection">
-          html, body, body *{
+          <style id="card1-drag-bridge-fix">
+          /* The iframe is visual content only. Pointer gestures go to the
+             parent carousel so Card 1 drags exactly like the PNG cards. */
+          .about-card.html-filled > iframe{
+            pointer-events:none !important;
             user-select:none !important;
             -webkit-user-select:none !important;
-            -ms-user-select:none !important;
-            -webkit-touch-callout:none !important;
           }
-          img, svg{
-            -webkit-user-drag:none !important;
-            user-drag:none !important;
-          }
-          /* Keep interaction available for the clickable areas we add later. */
-          a, button, [role="button"], [data-clickable], [data-no-card-swipe]{
+
+          /* Future Card 1 interactions should be parent-level hotspots layered
+             above the iframe. These remain clickable without blocking drag elsewhere. */
+          .about-card.html-filled > .card-hotspot,
+          .about-card.html-filled > [data-card-hotspot]{
+            position:absolute;
+            z-index:5;
             pointer-events:auto !important;
+            touch-action:manipulation;
             cursor:pointer;
           }
           </style>
           '''
 
-          script = r'''
-          <script id="card-no-selection-script">
-          (() => {
-            document.addEventListener('selectstart', e => e.preventDefault());
-            document.addEventListener('dragstart', e => e.preventDefault());
-            document.querySelectorAll('img').forEach(img => img.setAttribute('draggable','false'));
-          })();
-          </script>
-          '''
-
-          if 'id="card-no-selection"' in html:
-              html = re.sub(r'<style id="card-no-selection">.*?</style>', css.strip(), html, count=1, flags=re.S)
+          if 'id="card1-drag-bridge-fix"' in html:
+              html = re.sub(r'<style id="card1-drag-bridge-fix">.*?</style>', css.strip(), html, count=1, flags=re.S)
           else:
               html = html.replace('</head>', css + '\n</head>', 1)
 
-          if 'id="card-no-selection-script"' in html:
-              html = re.sub(r'<script id="card-no-selection-script">.*?</script>', script.strip(), html, count=1, flags=re.S)
-          else:
-              html = html.replace('</body>', script + '\n</body>', 1)
-
           path.write_text(html, encoding='utf-8')
 
-      - name: Commit selection fix
+      - name: Commit drag fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add cards/card-01.html
+          git add index.html
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Disable text selection inside Card 1"
+            git commit -m "Restore Card 1 carousel dragging"
             git push
           fi
