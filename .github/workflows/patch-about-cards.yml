@@ -1,4 +1,4 @@
-name: Make Card 1 fully draggable
+name: Load replacement Card 1
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Add full drag surface over Card 1
+      - name: Point carousel to fresh Card 1 and preserve drag layer
         shell: python
         run: |
           from pathlib import Path
@@ -26,6 +26,15 @@ jobs:
           path = Path('index.html')
           html = path.read_text(encoding='utf-8')
 
+          # Force GitHub Pages/browser to request the replacement Card 1 HTML.
+          html = re.sub(
+              r'src="cards/card-01\.html(?:\?[^\"]*)?"',
+              'src="cards/card-01.html?v=fe4664eade33"',
+              html,
+              count=1,
+          )
+
+          # Keep Card 1 visual-only at iframe level so the carousel owns drag gestures.
           css = r'''
           <style id="card1-drag-bridge-fix">
           .about-card.html-filled > iframe{
@@ -33,9 +42,6 @@ jobs:
             user-select:none !important;
             -webkit-user-select:none !important;
           }
-
-          /* Transparent interaction layer covering the whole visible Card 1 shell.
-             Drag starts anywhere on the card and bubbles to the existing carousel. */
           .about-card.html-filled > .card-drag-surface{
             position:absolute;
             inset:0;
@@ -48,8 +54,6 @@ jobs:
           .about-card.html-filled.is-dragging > .card-drag-surface{
             cursor:grabbing;
           }
-
-          /* Future click targets sit above the drag surface only where needed. */
           .about-card.html-filled > .card-hotspot,
           .about-card.html-filled > [data-card-hotspot]{
             position:absolute;
@@ -92,7 +96,7 @@ jobs:
 
           path.write_text(html, encoding='utf-8')
 
-      - name: Commit full drag surface
+      - name: Commit replacement Card 1 reference
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -100,6 +104,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Make entire Card 1 draggable"
+            git commit -m "Load replacement Card 1 HTML"
             git push
           fi
