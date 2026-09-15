@@ -1,4 +1,4 @@
-name: Map replacement Card 1 exactly to shell
+name: Republish working Card 1
 
 on:
   push:
@@ -77,7 +77,7 @@ jobs:
           html = index_path.read_text(encoding='utf-8')
           html = re.sub(
               r'src="cards/card-01\.html(?:\?[^\"]*)?"',
-              'src="cards/card-01.html?v=20260915-1501"',
+              'src="cards/card-01.html?v=20260915-1524"',
               html,
               count=1,
           )
@@ -91,6 +91,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Map replacement Card 1 exactly to shell"
+            git commit -m "Republish working Card 1"
             git push
           fi
