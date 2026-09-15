@@ -1614,6 +1614,29 @@ html,
 }
 </style>
 
+
+<style id="about-card-safe-bounds-shadow">
+  .about-card.html-filled{
+    overflow: visible !important;
+  }
+  .about-card.html-filled > iframe{
+    position: absolute !important;
+    width: 108% !important;
+    height: 106% !important;
+    left: -4% !important;
+    top: -3% !important;
+    border: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+  }
+
+  /* Active card gets the approved orange offset shadow. */
+  .about-card.html-filled[data-depth="0"],
+  .about-card.image-filled[data-depth="0"]{
+    box-shadow: 12px 14px 0 #F5A833 !important;
+  }
+</style>
+
 </head>
 <body>
 <main class="about-card-module">

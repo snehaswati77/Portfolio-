@@ -958,7 +958,7 @@ body {
     min-height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     background: transparent !important;
     display: block !important;
   }
@@ -967,7 +967,7 @@ body {
     width: 100% !important;
     height: 100% !important;
     min-height: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     transform: none !important;
     zoom: 1 !important;
   }
@@ -978,6 +978,7 @@ body {
     width: 3036px !important;
     height: 5040px !important;
     transform-origin: center center !important;
+    overflow: visible !important;
   }
 </style>
 
@@ -2360,15 +2361,17 @@ body {
 
 <script id="embedded-card-fit">
 (() => {
-  const BASE_W = 3036;
-  const BASE_H = 5040;
+  const ART_W = 3036;
+  const ART_H = 5040;
+  const SAFE_W = 3279;
+  const SAFE_H = 5342;
   const layer = document.querySelector('.content-layer');
   if (!layer) return;
 
   const fit = () => {
-    const w = window.innerWidth || document.documentElement.clientWidth || BASE_W;
-    const h = window.innerHeight || document.documentElement.clientHeight || BASE_H;
-    const scale = Math.min(w / BASE_W, h / BASE_H);
+    const w = window.innerWidth || document.documentElement.clientWidth || SAFE_W;
+    const h = window.innerHeight || document.documentElement.clientHeight || SAFE_H;
+    const scale = Math.min(w / SAFE_W, h / SAFE_H);
     layer.style.transform = `translate(-50%, -50%) scale(${scale})`;
   };
 
