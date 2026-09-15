@@ -1637,6 +1637,45 @@ html,
   }
 </style>
 
+
+<style id="about-card-visual-fixes">
+/* Give the HTML card a larger transparent viewport without changing
+   the visible artwork scale. This prevents its outline/shadow from clipping. */
+.about-card.html-filled{
+  overflow:visible !important;
+}
+.about-card.html-filled > iframe{
+  position:absolute !important;
+  left:-4% !important;
+  top:-4% !important;
+  width:108% !important;
+  height:108% !important;
+  max-width:none !important;
+  max-height:none !important;
+  border:0 !important;
+  background:transparent !important;
+  overflow:hidden !important;
+  pointer-events:auto;
+}
+
+/* Orange offset shadow belongs only to the currently active filled card. */
+.about-card[data-depth="0"].html-filled,
+.about-card[data-depth="0"].image-filled{
+  box-shadow:18px 20px 0 #F5A833 !important;
+  border-radius:var(--radius) !important;
+}
+.about-card[data-depth="1"].html-filled,
+.about-card[data-depth="2"].html-filled,
+.about-card[data-depth="3"].html-filled,
+.about-card[data-depth="4"].html-filled,
+.about-card[data-depth="1"].image-filled,
+.about-card[data-depth="2"].image-filled,
+.about-card[data-depth="3"].image-filled,
+.about-card[data-depth="4"].image-filled{
+  box-shadow:none !important;
+}
+</style>
+
 </head>
 <body>
 <main class="about-card-module">

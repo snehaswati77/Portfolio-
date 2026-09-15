@@ -950,36 +950,35 @@ body {
          flex: 0 0 auto;
       }
     </style>
-  
+
 <style id="embedded-card-fit-css">
-  html, body {
-    width: 100% !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    background: transparent !important;
-    display: block !important;
-  }
-  .viewport {
-    position: relative !important;
-    width: 100% !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-    transform: none !important;
-    zoom: 1 !important;
-  }
-  .content-layer {
-    position: absolute !important;
-    left: 50% !important;
-    top: 50% !important;
-    width: 3036px !important;
-    height: 5040px !important;
-    transform-origin: center center !important;
-    overflow: visible !important;
-  }
+html, body{
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  background:transparent !important;
+  display:block !important;
+}
+.viewport{
+  position:relative !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  overflow:visible !important;
+  transform:none !important;
+  zoom:1 !important;
+}
+.content-layer{
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:3036px !important;
+  height:5040px !important;
+  transform-origin:center center !important;
+}
 </style>
 
 </head>
@@ -2361,22 +2360,24 @@ body {
 
 <script id="embedded-card-fit">
 (() => {
-  const ART_W = 3036;
-  const ART_H = 5040;
-  const SAFE_W = 3279;
-  const SAFE_H = 5342;
+  const BASE_W = 3036;
+  const BASE_H = 5040;
+  const SAFE_FACTOR = 1.08; // matches the iframe's 108% safe canvas
   const layer = document.querySelector('.content-layer');
   if (!layer) return;
 
   const fit = () => {
-    const w = window.innerWidth || document.documentElement.clientWidth || SAFE_W;
-    const h = window.innerHeight || document.documentElement.clientHeight || SAFE_H;
-    const scale = Math.min(w / SAFE_W, h / SAFE_H);
+    const w = window.innerWidth || document.documentElement.clientWidth || BASE_W;
+    const h = window.innerHeight || document.documentElement.clientHeight || BASE_H;
+    const scale = Math.min(
+      w / (BASE_W * SAFE_FACTOR),
+      h / (BASE_H * SAFE_FACTOR)
+    );
     layer.style.transform = `translate(-50%, -50%) scale(${scale})`;
   };
 
   fit();
-  window.addEventListener('resize', fit, { passive: true });
+  window.addEventListener('resize', fit, {passive:true});
 })();
 </script>
 
