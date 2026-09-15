@@ -1,4 +1,4 @@
-name: Patch About card 1 HTML
+name: Fix About card clipping and shadow
 
 on:
   push:
@@ -17,16 +17,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fix Card 1 embedded scaling
+      - name: Fix Card 1 safe bounds and active shadow
         shell: python
         run: |
           from pathlib import Path
           import re
 
+          # --- Card 1: preserve its current visible size, but give it a larger
+          # internal canvas so the outline / orange edge cannot be clipped. ---
           card_path = Path('cards/card-01.html')
           card = card_path.read_text(encoding='utf-8')
 
-          # Remove any old iframe fit script so scaling is applied only once.
           card = re.sub(
               r'\s*<script id="embedded-card-fit">.*?</script>\s*',
               '\n',
@@ -35,7 +36,6 @@ jobs:
               flags=re.S,
           )
 
-          # Neutralize the standalone preview zoom.
           card = re.sub(r'zoom:\s*[^;]+;', 'zoom: 1 !important;', card)
 
           fit_css = r'''
@@ -46,7 +46,7 @@ jobs:
               min-height: 0 !important;
               margin: 0 !important;
               padding: 0 !important;
-              overflow: hidden !important;
+              overflow: visible !important;
               background: transparent !important;
               display: block !important;
             }
@@ -55,7 +55,7 @@ jobs:
               width: 100% !important;
               height: 100% !important;
               min-height: 0 !important;
-              overflow: hidden !important;
+              overflow: visible !important;
               transform: none !important;
               zoom: 1 !important;
             }
@@ -66,28 +66,36 @@ jobs:
               width: 3036px !important;
               height: 5040px !important;
               transform-origin: center center !important;
+              overflow: visible !important;
             }
           </style>
           '''
 
-          # Replace prior override if present, otherwise append before </head>.
           if 'id="embedded-card-fit-css"' in card:
-              card = re.sub(r'<style id="embedded-card-fit-css">.*?</style>', fit_css.strip(), card, count=1, flags=re.S)
+              card = re.sub(
+                  r'<style id="embedded-card-fit-css">.*?</style>',
+                  fit_css.strip(),
+                  card,
+                  count=1,
+                  flags=re.S,
+              )
           else:
               card = card.replace('</head>', fit_css + '\n</head>', 1)
 
           fit_script = r'''
           <script id="embedded-card-fit">
           (() => {
-            const BASE_W = 3036;
-            const BASE_H = 5040;
+            const ART_W = 3036;
+            const ART_H = 5040;
+            const SAFE_W = 3279;
+            const SAFE_H = 5342;
             const layer = document.querySelector('.content-layer');
             if (!layer) return;
 
             const fit = () => {
-              const w = window.innerWidth || document.documentElement.clientWidth || BASE_W;
-              const h = window.innerHeight || document.documentElement.clientHeight || BASE_H;
-              const scale = Math.min(w / BASE_W, h / BASE_H);
+              const w = window.innerWidth || document.documentElement.clientWidth || SAFE_W;
+              const h = window.innerHeight || document.documentElement.clientHeight || SAFE_H;
+              const scale = Math.min(w / SAFE_W, h / SAFE_H);
               layer.style.transform = `translate(-50%, -50%) scale(${scale})`;
             };
 
@@ -99,14 +107,56 @@ jobs:
           card = card.replace('</body>', fit_script + '\n</body>', 1)
           card_path.write_text(card, encoding='utf-8')
 
-      - name: Commit scaling fix
+          # --- About carousel: enlarge only the iframe canvas, not the artwork,
+          # and restore the orange active-card offset shadow. ---
+          index_path = Path('index.html')
+          html = index_path.read_text(encoding='utf-8')
+
+          override = r'''
+          <style id="about-card-safe-bounds-shadow">
+            .about-card.html-filled{
+              overflow: visible !important;
+            }
+            .about-card.html-filled > iframe{
+              position: absolute !important;
+              width: 108% !important;
+              height: 106% !important;
+              left: -4% !important;
+              top: -3% !important;
+              border: 0 !important;
+              background: transparent !important;
+              overflow: visible !important;
+            }
+
+            /* Active card gets the approved orange offset shadow. */
+            .about-card.html-filled[data-depth="0"],
+            .about-card.image-filled[data-depth="0"]{
+              box-shadow: 12px 14px 0 #F5A833 !important;
+            }
+          </style>
+          '''
+
+          if 'id="about-card-safe-bounds-shadow"' in html:
+              html = re.sub(
+                  r'<style id="about-card-safe-bounds-shadow">.*?</style>',
+                  override.strip(),
+                  html,
+                  count=1,
+                  flags=re.S,
+              )
+          else:
+              html = html.replace('</head>', override + '\n</head>', 1)
+
+          index_path.write_text(html, encoding='utf-8')
+
+      - name: Commit clipping and shadow fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add cards/card-01.html
+          git add index.html cards/card-01.html
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Fix Card 1 embedded scaling"
+            git commit -m "Fix Card 1 clipping and active orange shadow"
             git push
           fi
