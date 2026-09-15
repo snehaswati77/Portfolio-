@@ -17,80 +17,96 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Wire Card 1 HTML into About carousel
+      - name: Fix Card 1 embedded scaling
         shell: python
         run: |
           from pathlib import Path
           import re
 
-          index_path = Path('index.html')
-          html = index_path.read_text(encoding='utf-8')
+          card_path = Path('cards/card-01.html')
+          card = card_path.read_text(encoding='utf-8')
 
-          styles = r'''
-          <style id="about-html-card-styles">
-          .about-card.html-filled{
-            background:transparent !important;
-            border:0 !important;
-            box-shadow:none !important;
-            overflow:visible !important;
-          }
-          .about-card.html-filled::after{display:none !important;}
-          .about-card.html-filled > iframe{
-            display:block;
-            width:100%;
-            height:100%;
-            border:0;
-            background:transparent;
-            overflow:hidden;
-          }
-          </style>
-          '''
-
-          if 'id="about-html-card-styles"' not in html:
-              html = html.replace('</head>', styles + '\n</head>', 1)
-
-          card1 = '<article aria-label="About card 1" class="about-card html-filled" data-card="1"><iframe src="cards/card-01.html" title="Sneha Swati Character Card" scrolling="no" loading="eager"></iframe></article>'
-          html, n1 = re.subn(
-              r'<article\s+aria-label="About card 1"[^>]*data-card="1"[^>]*>.*?</article>',
-              card1,
-              html,
+          # Remove any old iframe fit script so scaling is applied only once.
+          card = re.sub(
+              r'\s*<script id="embedded-card-fit">.*?</script>\s*',
+              '\n',
+              card,
               count=1,
               flags=re.S,
           )
-          if n1 != 1:
-              raise SystemExit(f'Expected one Card 1 match; got {n1}')
-          index_path.write_text(html, encoding='utf-8')
 
-          card_path = Path('cards/card-01.html')
-          card = card_path.read_text(encoding='utf-8')
-          card = re.sub(r'zoom:\s*0\.3\s*;', 'zoom: 1;', card, count=1)
+          # Neutralize the standalone preview zoom.
+          card = re.sub(r'zoom:\s*[^;]+;', 'zoom: 1 !important;', card)
+
+          fit_css = r'''
+          <style id="embedded-card-fit-css">
+            html, body {
+              width: 100% !important;
+              height: 100% !important;
+              min-height: 0 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden !important;
+              background: transparent !important;
+              display: block !important;
+            }
+            .viewport {
+              position: relative !important;
+              width: 100% !important;
+              height: 100% !important;
+              min-height: 0 !important;
+              overflow: hidden !important;
+              transform: none !important;
+              zoom: 1 !important;
+            }
+            .content-layer {
+              position: absolute !important;
+              left: 50% !important;
+              top: 50% !important;
+              width: 3036px !important;
+              height: 5040px !important;
+              transform-origin: center center !important;
+            }
+          </style>
+          '''
+
+          # Replace prior override if present, otherwise append before </head>.
+          if 'id="embedded-card-fit-css"' in card:
+              card = re.sub(r'<style id="embedded-card-fit-css">.*?</style>', fit_css.strip(), card, count=1, flags=re.S)
+          else:
+              card = card.replace('</head>', fit_css + '\n</head>', 1)
+
           fit_script = r'''
           <script id="embedded-card-fit">
           (() => {
             const BASE_W = 3036;
-            const viewport = document.querySelector('.viewport');
-            if (!viewport) return;
+            const BASE_H = 5040;
+            const layer = document.querySelector('.content-layer');
+            if (!layer) return;
+
             const fit = () => {
-              const w = document.documentElement.clientWidth || window.innerWidth || BASE_W;
-              viewport.style.zoom = String(w / BASE_W);
+              const w = window.innerWidth || document.documentElement.clientWidth || BASE_W;
+              const h = window.innerHeight || document.documentElement.clientHeight || BASE_H;
+              const scale = Math.min(w / BASE_W, h / BASE_H);
+              layer.style.transform = `translate(-50%, -50%) scale(${scale})`;
             };
+
             fit();
-            window.addEventListener('resize', fit, {passive:true});
+            window.addEventListener('resize', fit, { passive: true });
           })();
           </script>
           '''
-          if 'id="embedded-card-fit"' not in card:
-              card = card.replace('</body>', fit_script + '\n</body>', 1)
+          card = card.replace('</body>', fit_script + '\n</body>', 1)
           card_path.write_text(card, encoding='utf-8')
 
-      - name: Commit patched About card
+      - name: Commit scaling fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html cards/card-01.html
+          git add cards/card-01.html
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Use Card 1 HTML in About carousel"
+            git commit -m "Fix Card 1 embedded scaling"
             git push
           fi
