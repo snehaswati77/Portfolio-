@@ -946,7 +946,7 @@ body {
         width: 3036px;
         min-height: 5040px;
         transform-origin: center center;
-         zoom: 0.3;
+         zoom: 1;
          flex: 0 0 auto;
       }
     </style>
@@ -2326,6 +2326,21 @@ body {
         window.addEventListener('resize', fit);
       });
     </script>
-  </body>
+  
+<script id="embedded-card-fit">
+(() => {
+  const BASE_W = 3036;
+  const viewport = document.querySelector('.viewport');
+  if (!viewport) return;
+  const fit = () => {
+    const w = document.documentElement.clientWidth || window.innerWidth || BASE_W;
+    viewport.style.zoom = String(w / BASE_W);
+  };
+  fit();
+  window.addEventListener('resize', fit, {passive:true});
+})();
+</script>
+
+</body>
 
 </html>
