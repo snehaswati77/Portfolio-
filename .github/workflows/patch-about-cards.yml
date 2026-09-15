@@ -1,4 +1,4 @@
-name: Standardize About active card shadow
+name: Disable About card text selection
 
 on:
   push:
@@ -17,88 +17,65 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Standardize active shadow geometry
+      - name: Disable selection inside Card 1 without blocking clicks
         shell: python
         run: |
           from pathlib import Path
           import re
 
-          path = Path('index.html')
+          path = Path('cards/card-01.html')
           html = path.read_text(encoding='utf-8')
 
           css = r'''
-          <style id="about-active-hard-shadow">
-          /* One shadow system for every filled card. */
-          .about-card.html-filled,
-          .about-card.image-filled{
-            overflow:visible !important;
-            background:transparent !important;
-            box-shadow:none !important;
-          }
-
-          .about-card.html-filled::before,
-          .about-card.image-filled::before{
-            content:"";
-            position:absolute;
-            border-radius:inherit;
-            background:#F5A833;
-            transform:translate(5px,6px);
-            opacity:0;
-            pointer-events:none;
-            z-index:0;
-          }
-
-          /* Bridge HTML exports carry a small safe canvas around the true
-             2945 x 4962 card body. Match the shadow to that visible body. */
-          .about-card.html-filled::before{
-            top:.8%;
-            bottom:.8%;
-            left:1.5%;
-            right:1.5%;
-          }
-
-          /* PNG cards already map their visible card to the carousel shell. */
-          .about-card.image-filled::before{
-            inset:0;
-          }
-
-          .about-card[data-depth="0"].html-filled::before,
-          .about-card[data-depth="0"].image-filled::before{
-            opacity:1 !important;
-          }
-
-          .about-card.html-filled > iframe,
-          .about-card.image-filled > img{
-            z-index:2 !important;
+          <style id="card-no-selection">
+          html, body, body *{
             user-select:none !important;
             -webkit-user-select:none !important;
+            -ms-user-select:none !important;
+            -webkit-touch-callout:none !important;
           }
-
-          .about-card.html-filled > iframe{
-            position:absolute !important;
+          img, svg{
+            -webkit-user-drag:none !important;
+            user-drag:none !important;
           }
-
-          .about-card.image-filled > img{
-            position:relative !important;
+          /* Keep interaction available for the clickable areas we add later. */
+          a, button, [role="button"], [data-clickable], [data-no-card-swipe]{
+            pointer-events:auto !important;
+            cursor:pointer;
           }
           </style>
           '''
 
-          if 'id="about-active-hard-shadow"' in html:
-              html = re.sub(r'<style id="about-active-hard-shadow">.*?</style>', css.strip(), html, count=1, flags=re.S)
+          script = r'''
+          <script id="card-no-selection-script">
+          (() => {
+            document.addEventListener('selectstart', e => e.preventDefault());
+            document.addEventListener('dragstart', e => e.preventDefault());
+            document.querySelectorAll('img').forEach(img => img.setAttribute('draggable','false'));
+          })();
+          </script>
+          '''
+
+          if 'id="card-no-selection"' in html:
+              html = re.sub(r'<style id="card-no-selection">.*?</style>', css.strip(), html, count=1, flags=re.S)
           else:
               html = html.replace('</head>', css + '\n</head>', 1)
 
+          if 'id="card-no-selection-script"' in html:
+              html = re.sub(r'<script id="card-no-selection-script">.*?</script>', script.strip(), html, count=1, flags=re.S)
+          else:
+              html = html.replace('</body>', script + '\n</body>', 1)
+
           path.write_text(html, encoding='utf-8')
 
-      - name: Commit standardized shadow
+      - name: Commit selection fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
+          git add cards/card-01.html
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Standardize About active card shadow"
+            git commit -m "Disable text selection inside Card 1"
             git push
           fi
