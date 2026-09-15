@@ -960,7 +960,11 @@ html, body{
   padding:0 !important;
   overflow:hidden !important;
   background:transparent !important;
-  display:block !important;
+}
+body{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
 }
 .viewport{
   position:relative !important;
@@ -972,12 +976,14 @@ html, body{
   zoom:1 !important;
 }
 .content-layer{
-  position:absolute !important;
-  left:50% !important;
-  top:50% !important;
+  position:relative !important;
+  left:auto !important;
+  top:auto !important;
   width:3036px !important;
   height:5040px !important;
-  transform-origin:center center !important;
+  transform:none !important;
+  transform-origin:top left !important;
+  flex:none !important;
 }
 </style>
 
@@ -2381,7 +2387,7 @@ a, button, [role="button"], [data-clickable], [data-no-card-swipe]{
 (() => {
   const BASE_W = 3036;
   const BASE_H = 5040;
-  const SAFE_FACTOR = 1.08; // matches the iframe's 108% safe canvas
+  const SAFE_FACTOR = 1.08;
   const layer = document.querySelector('.content-layer');
   if (!layer) return;
 
@@ -2392,7 +2398,11 @@ a, button, [role="button"], [data-clickable], [data-no-card-swipe]{
       w / (BASE_W * SAFE_FACTOR),
       h / (BASE_H * SAFE_FACTOR)
     );
-    layer.style.transform = `translate(-50%, -50%) scale(${scale})`;
+
+    /* CSS zoom preserves text/vector rasterization better than
+       transform:scale() at these very small fractional sizes. */
+    layer.style.zoom = String(scale);
+    layer.style.transform = 'none';
   };
 
   fit();
