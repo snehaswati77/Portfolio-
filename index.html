@@ -1678,10 +1678,9 @@ html,
 
 
 <style id="about-active-hard-shadow">
+/* One shadow system for every filled card. */
 .about-card.html-filled,
-.about-card.image-filled,
-.about-card[data-depth="0"].html-filled,
-.about-card[data-depth="0"].image-filled{
+.about-card.image-filled{
   overflow:visible !important;
   background:transparent !important;
   box-shadow:none !important;
@@ -1691,13 +1690,26 @@ html,
 .about-card.image-filled::before{
   content:"";
   position:absolute;
-  inset:0;
   border-radius:inherit;
   background:#F5A833;
   transform:translate(5px,6px);
   opacity:0;
   pointer-events:none;
   z-index:0;
+}
+
+/* Bridge HTML exports carry a small safe canvas around the true
+   2945 x 4962 card body. Match the shadow to that visible body. */
+.about-card.html-filled::before{
+  top:.8%;
+  bottom:.8%;
+  left:1.5%;
+  right:1.5%;
+}
+
+/* PNG cards already map their visible card to the carousel shell. */
+.about-card.image-filled::before{
+  inset:0;
 }
 
 .about-card[data-depth="0"].html-filled::before,
@@ -1708,18 +1720,16 @@ html,
 .about-card.html-filled > iframe,
 .about-card.image-filled > img{
   z-index:2 !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
 }
 
 .about-card.html-filled > iframe{
   position:absolute !important;
-  user-select:none !important;
-  -webkit-user-select:none !important;
 }
 
 .about-card.image-filled > img{
   position:relative !important;
-  user-select:none !important;
-  -webkit-user-select:none !important;
 }
 </style>
 
