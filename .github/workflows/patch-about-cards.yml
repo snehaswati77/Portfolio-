@@ -1,4 +1,4 @@
-name: Fix About card clipping and shadow
+name: Fix About active card shadow
 
 on:
   push:
@@ -17,139 +17,72 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fix Card 1 safe bounds and active shadow
+      - name: Add hard orange shadow layer to active filled card
         shell: python
         run: |
           from pathlib import Path
           import re
 
-          # ---------- MAIN CAROUSEL ----------
-          index_path = Path('index.html')
-          html = index_path.read_text(encoding='utf-8')
+          path = Path('index.html')
+          html = path.read_text(encoding='utf-8')
 
-          fixes = r'''
-          <style id="about-card-visual-fixes">
-          /* Give the HTML card a larger transparent viewport without changing
-             the visible artwork scale. This prevents its outline/shadow from clipping. */
-          .about-card.html-filled{
+          css = r'''
+          <style id="about-active-hard-shadow">
+          .about-card.html-filled,
+          .about-card.image-filled{
             overflow:visible !important;
-          }
-          .about-card.html-filled > iframe{
-            position:absolute !important;
-            left:-4% !important;
-            top:-4% !important;
-            width:108% !important;
-            height:108% !important;
-            max-width:none !important;
-            max-height:none !important;
-            border:0 !important;
             background:transparent !important;
-            overflow:hidden !important;
-            pointer-events:auto;
-          }
-
-          /* Orange offset shadow belongs only to the currently active filled card. */
-          .about-card[data-depth="0"].html-filled,
-          .about-card[data-depth="0"].image-filled{
-            box-shadow:18px 20px 0 #F5A833 !important;
-            border-radius:var(--radius) !important;
-          }
-          .about-card[data-depth="1"].html-filled,
-          .about-card[data-depth="2"].html-filled,
-          .about-card[data-depth="3"].html-filled,
-          .about-card[data-depth="4"].html-filled,
-          .about-card[data-depth="1"].image-filled,
-          .about-card[data-depth="2"].image-filled,
-          .about-card[data-depth="3"].image-filled,
-          .about-card[data-depth="4"].image-filled{
             box-shadow:none !important;
           }
-          </style>
-          '''
 
-          if 'id="about-card-visual-fixes"' in html:
-              html = re.sub(r'<style id="about-card-visual-fixes">.*?</style>', fixes.strip(), html, count=1, flags=re.S)
-          else:
-              html = html.replace('</head>', fixes + '\n</head>', 1)
-          index_path.write_text(html, encoding='utf-8')
-
-          # ---------- CARD 1 HTML ----------
-          card_path = Path('cards/card-01.html')
-          card = card_path.read_text(encoding='utf-8')
-
-          # Remove previous fit CSS/script so there is one authoritative embed fit.
-          card = re.sub(r'\s*<style id="embedded-card-fit-css">.*?</style>\s*', '\n', card, count=1, flags=re.S)
-          card = re.sub(r'\s*<script id="embedded-card-fit">.*?</script>\s*', '\n', card, count=1, flags=re.S)
-          card = re.sub(r'zoom:\s*[^;]+;', 'zoom: 1 !important;', card)
-
-          fit_css = r'''
-          <style id="embedded-card-fit-css">
-          html, body{
-            width:100% !important;
-            height:100% !important;
-            min-height:0 !important;
-            margin:0 !important;
-            padding:0 !important;
-            overflow:hidden !important;
-            background:transparent !important;
-            display:block !important;
+          .about-card.html-filled::before,
+          .about-card.image-filled::before{
+            content:"";
+            position:absolute;
+            inset:0;
+            border-radius:inherit;
+            background:#F5A833;
+            transform:translate(18px,20px);
+            opacity:0;
+            pointer-events:none;
+            z-index:0;
           }
-          .viewport{
-            position:relative !important;
-            width:100% !important;
-            height:100% !important;
-            min-height:0 !important;
-            overflow:visible !important;
-            transform:none !important;
-            zoom:1 !important;
+
+          .about-card[data-depth="0"].html-filled::before,
+          .about-card[data-depth="0"].image-filled::before{
+            opacity:1 !important;
           }
-          .content-layer{
+
+          .about-card.html-filled > iframe,
+          .about-card.image-filled > img{
+            z-index:2 !important;
+          }
+
+          .about-card.html-filled > iframe{
             position:absolute !important;
-            left:50% !important;
-            top:50% !important;
-            width:3036px !important;
-            height:5040px !important;
-            transform-origin:center center !important;
+          }
+
+          .about-card.image-filled > img{
+            position:relative !important;
           }
           </style>
           '''
-          card = card.replace('</head>', fit_css + '\n</head>', 1)
 
-          fit_script = r'''
-          <script id="embedded-card-fit">
-          (() => {
-            const BASE_W = 3036;
-            const BASE_H = 5040;
-            const SAFE_FACTOR = 1.08; // matches the iframe's 108% safe canvas
-            const layer = document.querySelector('.content-layer');
-            if (!layer) return;
+          if 'id="about-active-hard-shadow"' in html:
+              html = re.sub(r'<style id="about-active-hard-shadow">.*?</style>', css.strip(), html, count=1, flags=re.S)
+          else:
+              html = html.replace('</head>', css + '\n</head>', 1)
 
-            const fit = () => {
-              const w = window.innerWidth || document.documentElement.clientWidth || BASE_W;
-              const h = window.innerHeight || document.documentElement.clientHeight || BASE_H;
-              const scale = Math.min(
-                w / (BASE_W * SAFE_FACTOR),
-                h / (BASE_H * SAFE_FACTOR)
-              );
-              layer.style.transform = `translate(-50%, -50%) scale(${scale})`;
-            };
+          path.write_text(html, encoding='utf-8')
 
-            fit();
-            window.addEventListener('resize', fit, {passive:true});
-          })();
-          </script>
-          '''
-          card = card.replace('</body>', fit_script + '\n</body>', 1)
-          card_path.write_text(card, encoding='utf-8')
-
-      - name: Commit visual fixes
+      - name: Commit hard shadow fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html cards/card-01.html
+          git add index.html
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Fix Card 1 clipping and active orange shadow"
+            git commit -m "Add hard orange shadow to active About card"
             git push
           fi
