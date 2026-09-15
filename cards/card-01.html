@@ -967,18 +967,17 @@ html, body{
   width:100% !important;
   height:100% !important;
   min-height:0 !important;
-  overflow:hidden !important;
+  overflow:visible !important;
   transform:none !important;
-  transform-origin:top left !important;
   zoom:1 !important;
 }
 .content-layer{
   position:absolute !important;
-  left:0 !important;
-  top:0 !important;
-  width:2992.93px !important;
-  height:4962px !important;
-  transform-origin:top left !important;
+  left:50% !important;
+  top:50% !important;
+  width:3036px !important;
+  height:5040px !important;
+  transform-origin:center center !important;
 }
 </style>
 
@@ -2380,16 +2379,22 @@ a, button, [role="button"], [data-clickable], [data-no-card-swipe]{
 
 <script id="embedded-card-fit">
 (() => {
-  const CARD_W = 2945;
-  const CARD_H = 4962;
+  const BASE_W = 3036;
+  const BASE_H = 5040;
+  const SAFE_FACTOR = 1.08; // matches the iframe's 108% safe canvas
   const layer = document.querySelector('.content-layer');
   if (!layer) return;
+
   const fit = () => {
-    const w = window.innerWidth || CARD_W;
-    const h = window.innerHeight || CARD_H;
-    const s = Math.min(w / CARD_W, h / CARD_H);
-    layer.style.transform = `scale(${s})`;
+    const w = window.innerWidth || document.documentElement.clientWidth || BASE_W;
+    const h = window.innerHeight || document.documentElement.clientHeight || BASE_H;
+    const scale = Math.min(
+      w / (BASE_W * SAFE_FACTOR),
+      h / (BASE_H * SAFE_FACTOR)
+    );
+    layer.style.transform = `translate(-50%, -50%) scale(${scale})`;
   };
+
   fit();
   window.addEventListener('resize', fit, {passive:true});
 })();
