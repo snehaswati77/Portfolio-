@@ -1676,6 +1676,47 @@ html,
 }
 </style>
 
+
+<style id="about-active-hard-shadow">
+.about-card.html-filled,
+.about-card.image-filled{
+  overflow:visible !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+.about-card.html-filled::before,
+.about-card.image-filled::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:#F5A833;
+  transform:translate(18px,20px);
+  opacity:0;
+  pointer-events:none;
+  z-index:0;
+}
+
+.about-card[data-depth="0"].html-filled::before,
+.about-card[data-depth="0"].image-filled::before{
+  opacity:1 !important;
+}
+
+.about-card.html-filled > iframe,
+.about-card.image-filled > img{
+  z-index:2 !important;
+}
+
+.about-card.html-filled > iframe{
+  position:absolute !important;
+}
+
+.about-card.image-filled > img{
+  position:relative !important;
+}
+</style>
+
 </head>
 <body>
 <main class="about-card-module">
