@@ -1,4 +1,4 @@
-name: Refine About active card shadow
+name: Fix duplicate About active card shadow
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Refine hard orange shadow on active filled card
+      - name: Keep only one hard orange shadow layer
         shell: python
         run: |
           from pathlib import Path
@@ -29,7 +29,9 @@ jobs:
           css = r'''
           <style id="about-active-hard-shadow">
           .about-card.html-filled,
-          .about-card.image-filled{
+          .about-card.image-filled,
+          .about-card[data-depth="0"].html-filled,
+          .about-card[data-depth="0"].image-filled{
             overflow:visible !important;
             background:transparent !important;
             box-shadow:none !important;
@@ -73,9 +75,18 @@ jobs:
           else:
               html = html.replace('</head>', css + '\n</head>', 1)
 
+          # Disable the older active-card box-shadow rule if it is still present.
+          html = re.sub(
+              r'(\.about-card\[data-depth="0"\]\.html-filled,\s*\n\s*\.about-card\[data-depth="0"\]\.image-filled\s*\{\s*)box-shadow:[^;]+!important;',
+              r'\1box-shadow:none !important;',
+              html,
+              count=1,
+              flags=re.S,
+          )
+
           path.write_text(html, encoding='utf-8')
 
-      - name: Commit refined hard shadow
+      - name: Commit shadow cleanup
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -83,6 +94,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Thin active About card orange shadow"
+            git commit -m "Remove duplicate About active card shadow"
             git push
           fi
