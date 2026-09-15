@@ -1,4 +1,4 @@
-name: Make Card 1 fully draggable
+name: Force refresh restored Card 1
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Add full drag surface over Card 1
+      - name: Cache-bust Card 1 iframe after rollback
         shell: python
         run: |
           from pathlib import Path
@@ -26,73 +26,18 @@ jobs:
           path = Path('index.html')
           html = path.read_text(encoding='utf-8')
 
-          css = r'''
-          <style id="card1-drag-bridge-fix">
-          .about-card.html-filled > iframe{
-            pointer-events:none !important;
-            user-select:none !important;
-            -webkit-user-select:none !important;
-          }
-
-          /* Transparent interaction layer covering the whole visible Card 1 shell.
-             Drag starts anywhere on the card and bubbles to the existing carousel. */
-          .about-card.html-filled > .card-drag-surface{
-            position:absolute;
-            inset:0;
-            z-index:4;
-            background:transparent;
-            pointer-events:auto;
-            cursor:grab;
-            touch-action:none;
-          }
-          .about-card.html-filled.is-dragging > .card-drag-surface{
-            cursor:grabbing;
-          }
-
-          /* Future click targets sit above the drag surface only where needed. */
-          .about-card.html-filled > .card-hotspot,
-          .about-card.html-filled > [data-card-hotspot]{
-            position:absolute;
-            z-index:5;
-            pointer-events:auto !important;
-            touch-action:manipulation;
-            cursor:pointer;
-          }
-          </style>
-          '''
-
-          script = r'''
-          <script id="card1-drag-surface-script">
-          (() => {
-            const ensureSurface = () => {
-              document.querySelectorAll('.about-card.html-filled').forEach(card => {
-                if (!card.querySelector(':scope > .card-drag-surface')) {
-                  const surface = document.createElement('div');
-                  surface.className = 'card-drag-surface';
-                  surface.setAttribute('aria-hidden', 'true');
-                  card.appendChild(surface);
-                }
-              });
-            };
-            ensureSurface();
-            window.addEventListener('DOMContentLoaded', ensureSurface, {once:true});
-          })();
-          </script>
-          '''
-
-          if 'id="card1-drag-bridge-fix"' in html:
-              html = re.sub(r'<style id="card1-drag-bridge-fix">.*?</style>', css.strip(), html, count=1, flags=re.S)
-          else:
-              html = html.replace('</head>', css + '\n</head>', 1)
-
-          if 'id="card1-drag-surface-script"' in html:
-              html = re.sub(r'<script id="card1-drag-surface-script">.*?</script>', script.strip(), html, count=1, flags=re.S)
-          else:
-              html = html.replace('</body>', script + '\n</body>', 1)
+          # Keep the restored Card 1 implementation exactly as-is; only force
+          # browsers/GitHub Pages to request the current HTML instead of a cached copy.
+          html = re.sub(
+              r'src="cards/card-01\.html(?:\?[^\"]*)?"',
+              'src="cards/card-01.html?v=20260915-1409"',
+              html,
+              count=1,
+          )
 
           path.write_text(html, encoding='utf-8')
 
-      - name: Commit full drag surface
+      - name: Commit cache-bust
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -100,6 +45,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed."
           else
-            git commit -m "Make entire Card 1 draggable"
+            git commit -m "Force refresh restored Card 1"
             git push
           fi
