@@ -1661,7 +1661,7 @@ html,
 /* Orange offset shadow belongs only to the currently active filled card. */
 .about-card[data-depth="0"].html-filled,
 .about-card[data-depth="0"].image-filled{
-  box-shadow:18px 20px 0 #F5A833 !important;
+  box-shadow:none !important;
   border-radius:var(--radius) !important;
 }
 .about-card[data-depth="1"].html-filled,
@@ -1679,7 +1679,9 @@ html,
 
 <style id="about-active-hard-shadow">
 .about-card.html-filled,
-.about-card.image-filled{
+.about-card.image-filled,
+.about-card[data-depth="0"].html-filled,
+.about-card[data-depth="0"].image-filled{
   overflow:visible !important;
   background:transparent !important;
   box-shadow:none !important;
