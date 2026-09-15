@@ -1733,6 +1733,28 @@ html,
 }
 </style>
 
+
+<style id="card1-drag-bridge-fix">
+/* The iframe is visual content only. Pointer gestures go to the
+   parent carousel so Card 1 drags exactly like the PNG cards. */
+.about-card.html-filled > iframe{
+  pointer-events:none !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+}
+
+/* Future Card 1 interactions should be parent-level hotspots layered
+   above the iframe. These remain clickable without blocking drag elsewhere. */
+.about-card.html-filled > .card-hotspot,
+.about-card.html-filled > [data-card-hotspot]{
+  position:absolute;
+  z-index:5;
+  pointer-events:auto !important;
+  touch-action:manipulation;
+  cursor:pointer;
+}
+</style>
+
 </head>
 <body>
 <main class="about-card-module">
