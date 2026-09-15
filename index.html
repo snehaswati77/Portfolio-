@@ -1740,9 +1740,6 @@ html,
   user-select:none !important;
   -webkit-user-select:none !important;
 }
-
-/* Transparent interaction layer covering the whole visible Card 1 shell.
-   Drag starts anywhere on the card and bubbles to the existing carousel. */
 .about-card.html-filled > .card-drag-surface{
   position:absolute;
   inset:0;
@@ -1755,8 +1752,6 @@ html,
 .about-card.html-filled.is-dragging > .card-drag-surface{
   cursor:grabbing;
 }
-
-/* Future click targets sit above the drag surface only where needed. */
 .about-card.html-filled > .card-hotspot,
 .about-card.html-filled > [data-card-hotspot]{
   position:absolute;
@@ -1772,7 +1767,7 @@ html,
 <main class="about-card-module">
 <section aria-label="About card stack" class="about-card-stage" id="aboutCardStage" tabindex="0">
 <div class="about-card-stack" id="aboutCardStack">
-<article aria-label="About card 1" class="about-card html-filled" data-card="1"><iframe src="cards/card-01.html" title="Sneha Swati Character Card" scrolling="no" loading="eager"></iframe></article>
+<article aria-label="About card 1" class="about-card html-filled" data-card="1"><iframe src="cards/card-01.html?v=fe4664eade33" title="Sneha Swati Character Card" scrolling="no" loading="eager"></iframe></article>
 <article aria-label="About card 2" class="about-card image-filled" data-card="2"><img src="cards/Card%202.png" alt="Badges and Languages" draggable="false"></article>
 <article aria-label="About card 3" class="about-card" data-card="3"></article>
 <article aria-label="About card 4" class="about-card" data-card="4"></article>
